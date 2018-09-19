@@ -138,18 +138,22 @@ class ResumeArchiveJobsTest(AbstractJobArchivalTest):
     def test_resume_archiving(self, mock_archive_job):
         from flamenco.celery import job_archival
 
+        now = utcnow()
+
         # 1 day old in status archiving. Should be resumed
         self.force_job_status('archiving', self.job1_id)
-        self.set_job_updated(utcnow() - datetime.timedelta(days=1), self.job1_id)
+        self.set_job_updated(now - datetime.timedelta(days=1), self.job1_id)
 
         # archiving status but to new. Should *not* be resumed
         self.force_job_status('archiving', self.job2_id)
-        self.set_job_updated(utcnow() - datetime.timedelta(hours=23), self.job2_id)
+        self.set_job_updated(now - datetime.timedelta(hours=23), self.job2_id)
 
         # 1 day old but in wrong status. Should *not* be resumed
-        self.set_job_updated(utcnow() - datetime.timedelta(days=1), self.job3_id)
+        self.set_job_updated(now - datetime.timedelta(days=1), self.job3_id)
 
-        job_archival.resume_job_archiving()
+        with mock.patch('pillar.api.utils.utcnow') as mock_utcnow:
+            mock_utcnow.return_value = now
+            job_archival.resume_job_archiving()
 
         mock_archive_job.delay.assert_called_once()
         mock_archive_job.delay.assert_called_with(str(self.job1_id))

@@ -146,7 +146,7 @@ class AbstractFlamencoTest(AbstractPillarTest):
         if job_id is None:
             job_id = self.job_id
 
-        with self.app.test_request_context():
+        with self.app.app_context():
             jobs_coll = self.flamenco.db('jobs')
             result = jobs_coll.update_one({'_id': job_id},
                                           {'$set': {'_updated': new_updated}})
